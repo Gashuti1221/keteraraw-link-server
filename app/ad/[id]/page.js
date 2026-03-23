@@ -1,13 +1,19 @@
 import { redirect } from "next/navigation";
 
-// 1. Metadata Generation (Social Media Previews)
+// Define the base URL for your link server
+const SERVER_URL = "https://keteraraw-link-server.vercel.app";
+const FALLBACK_IMAGE = `${SERVER_URL}/preview.png`;
+
 export async function generateMetadata({ params }) {
     const { id } = await params;
 
+    // 1. Set a metadataBase to resolve paths correctly
+    const metadataBase = new URL(SERVER_URL);
+
     try {
-        // Fetch ad data from your backend API
-        const res = await fetch(`${process.env.API_BASE_URL}/ads/${id}`, {
-            next: { revalidate: 3600 } // Cache for 1 hour
+        const apiUrl = `${process.env.API_BASE_URL}/ads/${id}`;
+        const res = await fetch(apiUrl, {
+            next: { revalidate: 3600 }
         });
 
         if (!res.ok) throw new Error("Ad not found");
@@ -16,47 +22,56 @@ export async function generateMetadata({ params }) {
         const title = ad.title || "Keteraraw Ad";
         const price = ad?.details?.price ? ` - ${ad.details.price} ETB` : "";
         const finalTitle = `${title}${price}`;
+        const description = ad.description || "See this property on Keteraraw";
 
-        const rawImage = ad.images?.[0];
-        let image = "https://keteraraw-link-server.vercel.app/preview.png"; // Fallback image
-
-        if (rawImage) {
+        // Logic to get the correct image URL
+        let image = FALLBACK_IMAGE;
+        if (ad.photos?.[0]) {
+            const rawImage = ad.photos[0];
             const baseUrl = process.env.API_BASE_URL.replace(/\/$/, "");
             image = rawImage.startsWith("http") ? rawImage : `${baseUrl}/${rawImage.replace(/^\//, "")}`;
         }
 
         return {
+            metadataBase,
             title: finalTitle,
-            description: ad.description || "See this property on Keteraraw",
+            description: description,
             openGraph: {
                 title: finalTitle,
-                description: ad.description,
+                description: description,
                 images: [{ url: image, width: 1200, height: 630 }],
                 type: "website",
-                url: `https://keteraraw-link-server.vercel.app/ad/${id}`,
+                url: `${SERVER_URL}/ad/${id}`,
             },
             twitter: {
                 card: "summary_large_image",
                 title: finalTitle,
-                description: ad.description,
+                description: description,
                 images: [image],
             },
         };
     } catch (e) {
-        return { title: "Keteraraw - Real Estate" };
+        // IMPORTANT: Always return image metadata even on error
+        return {
+            metadataBase,
+            title: "Keteraraw - Add Details",
+            description: "Explore properties on Keteraraw",
+            openGraph: {
+                images: [{ url: FALLBACK_IMAGE }],
+            },
+            twitter: {
+                card: "summary_large_image",
+                images: [FALLBACK_IMAGE],
+            }
+        };
     }
 }
 
-// 2. The Page Component (The browser-side redirect)
 export default async function AdPage({ params }) {
     const { id } = await params;
 
-    // Next.js performs this redirect on the server-side immediately
+    // The redirect stays here
     redirect(`https://keteraraw.com/ad/${id}`);
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen font-sans">
-            <p className="text-gray-600">Redirecting to Keteraraw...</p>
-        </div>
-    );
+    return null; // Next.js handles the redirect before this renders
 }
