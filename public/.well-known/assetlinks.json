@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.savvybridge.keteraraw",
+            "sha256_cert_fingerprints": [
+                "04:02:3A:33:69:9C:08:68:99:66:A4:3C:42:3A:69:40:6B:0F:34:93:3E:AB:2D:0B:86:DB:9D:86:76:14:88:F9"
+            ]
+        }
+    }
+]
