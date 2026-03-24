@@ -16,6 +16,8 @@ export async function generateMetadata({ params }) {
             next: { revalidate: 3600 }
         });
 
+        console.log(`Fetching ad data ${res.data}`);
+
         if (!res.ok) throw new Error("Ad not found");
         const ad = await res.json();
 
